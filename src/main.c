@@ -58,8 +58,12 @@ void repl() {
             continue;
         }
 
-        printTerm(t);
-        printf("\n");
+        // DEBUG: print what was parsed
+        if (getenv("DEBUG")) {
+            printf("PARSED: ");
+            printTerm(t);
+            printf("\n");
+        }
 
         t = reduce(t);
         if (t == NULL) {
@@ -81,6 +85,13 @@ void runFile(const char* path) {
         return;
     }
 
+    // DEBUG: print what was parsed
+    if (getenv("DEBUG")) {
+        printf("PARSED: ");
+        printTerm(t);
+        printf("\n");
+    }
+
     t = reduce(t);
 
     if (t == NULL) {
@@ -89,9 +100,6 @@ void runFile(const char* path) {
 
     printTerm(t);
     printf("\n");
-
-    /* if (result == INTERPRET_COMPILE_ERROR) exit(65); */
-    /* if (result == INTERPRET_RUNTIME_ERROR) exit(70); */
 }
 
 int main(int argc, const char* argv[]) {

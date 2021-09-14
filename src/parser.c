@@ -139,18 +139,36 @@ static Term* term() {
     if (parser.current.type == TOKEN_LAMBDA) {
         advance();
 
-        Term* t = allocTerm(termHeap);
-        t->type = TERM_LAMBDA;
-
         // Match variable
         if (!match(TOKEN_VAR, "Expected variable.")) {
             return NULL;
         }
 
-        // Create variable
-        Var var = { .id = varId++, .name = (char)parser.current.start[0] };
-        t->term.lambda.var = var;
-        advance();
+        Term* first = NULL;
+
+        Term* cur = NULL;
+        int count = 0;
+        while (parser.current.type == TOKEN_VAR) {
+            Term* t = allocTerm(termHeap);
+            t->type = TERM_LAMBDA;
+
+            // Create variable
+            Var var = { .id = varId++, .name = (char)parser.current.start[0] };
+            t->term.lambda.var = var;
+
+            // Add variable to variable list
+            pushVarList(varList, var);
+
+            advance();
+
+            if (cur == NULL) {
+                first = t;
+            } else {
+                cur->term.lambda.body = t;
+            }
+            cur = t;
+            count++;
+        }
 
         // Match period
         if (!match(TOKEN_PERIOD, "Expected period.")) {
@@ -158,137 +176,21 @@ static Term* term() {
         }
         advance();
 
-        // Add variable to variable list
-        pushVarList(varList, var);
-
         // Get body
         Term* body = term();
-
-        popVarList(varList);
 
         if (body == NULL) {
             return NULL;
         }
 
-        t->term.lambda.body = body;
+        cur->term.lambda.body = body;
 
-        return t;
-    } else {
-        return application();
-    }
-}
-
-static Term* expression() {
-    Term* t = allocTerm(termHeap);
-
-    switch (parser.current.type) {
-        // deal with parens
-        case TOKEN_LEFT_PAREN: {
-            advance();
-            t = expression();
-            consume(TOKEN_RIGHT_PAREN, "Expect right parenthese.");
-            break;
-        }
-        case TOKEN_LAMBDA: {
-            t->type = TERM_LAMBDA;
-            advance();
-
-            // Match variable
-            if (!match(TOKEN_VAR, "Expected variable.")) {
-                return NULL;
-            }
-
-            // Create variable
-            Var var = { .id = varId++, .name = (char)parser.current.start[0] };
-            t->term.lambda.var = var;
-
-            // Match period
-            advance();
-            if (!match(TOKEN_PERIOD, "Expected period.")) {
-                return NULL;
-            }
-            advance();
-
-            // Add variable to variable list
-            pushVarList(varList, var);
-
-            // Get body
-            Term* body = expression();
-
+        for (int i = 0; i < count; i++)
             popVarList(varList);
 
-            if (body == NULL) {
-                return NULL;
-            }
-
-            t->term.lambda.body = body;
-
-            break;
-        }
-        case TOKEN_VAR: {
-            t->type = TERM_VAR;
-
-            char varName = (char)parser.current.start[0];
-
-            advance();
-
-            bool foundVar = false;
-            for (int i = 0; i < varList->size; i++) {
-                Var v = varList->vars[i];
-
-                if (v.name == varName) {
-                    t->term.var = v;
-                    foundVar = true;
-                }
-            }
-
-            // FREE VARIABLE
-            if (!foundVar) {
-                Var var = { .id = varId++, .name = varName };
-                t->term.var = var;
-            }
-
-            break;
-        }
-        case TOKEN_PERIOD:
-            errorAtCurrent("Unexpected period.");
-            return NULL;
-        case TOKEN_RIGHT_PAREN:
-            errorAtCurrent("Unexpected right paranthese.");
-            return NULL;
-        case TOKEN_EOF:
-            errorAtCurrent("Unexpected end of expression.");
-            return NULL;
-        case TOKEN_ERROR:
-            errorAtCurrent("Encountered token error.");
-            return NULL;
-    }
-
-    // TODO: make left-associative
-
-    // In case there is an application.
-    switch (parser.current.type) {
-        case TOKEN_LEFT_PAREN:
-        case TOKEN_LAMBDA:
-        case TOKEN_VAR: {
-            Term* s = expression();
-
-            if (s == NULL) {
-                return NULL;
-            }
-
-            Term* p = allocTerm(termHeap);
-            p->type = TERM_APP;
-            p->term.app.first = t;
-            p->term.app.second = s;
-
-            return p;
-        }
-        case TOKEN_RIGHT_PAREN:
-        case TOKEN_PERIOD:
-        case TOKEN_EOF:
-        case TOKEN_ERROR:
-            return t;
+        return first;
+    } else {
+        return application();
     }
 }
 
