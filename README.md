@@ -2,10 +2,7 @@
 Lambda calculus interpreter written in `C`.
 
 ## Resources
-Many resources were used in the creation of this interpreter, ranging from
-explanations of the lambda calculus, to example expressions, to algorithm
-descriptions.
-
+Many resources were used in the creation of this interpreter, including:
  - https://craftinginterpreters.com/
  - http://blog.rchain.coop/2018/08/15/computational-calculi-primer/
  - https://personal.utdallas.edu/~gupta/courses/apl/lambda.pdf
