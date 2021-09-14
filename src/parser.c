@@ -23,6 +23,10 @@ static Parser parser;
 static int varId = 0;
 static VarList* varList;
 
+static Term* term(void);
+static Term* application(void);
+static Term* atom(void);
+
 static void errorAt(Token* token, const char* message) {
     fprintf(stderr, "[line %d] Error", token->line);
 
@@ -67,6 +71,110 @@ static bool match(TokenType type, const char* message) {
         return false;
     } else {
         return true;
+    }
+}
+
+static Term* atom() {
+    if (parser.current.type == TOKEN_LEFT_PAREN) {
+        advance();
+        Term* t = term();
+        consume(TOKEN_RIGHT_PAREN, "Expected right parenthese.");
+        return t;
+    }
+
+    if (parser.current.type == TOKEN_VAR) {
+        Term* t = allocTerm(termHeap);
+        t->type = TERM_VAR;
+
+        char varName = (char)parser.current.start[0];
+
+        advance();
+
+        bool foundVar = false;
+        for (int i = 0; i < varList->size; i++) {
+            Var v = varList->vars[i];
+
+            if (v.name == varName) {
+                t->term.var = v;
+                foundVar = true;
+            }
+        }
+
+        // FREE VARIABLE
+        if (!foundVar) {
+            Var var = { .id = varId++, .name = varName };
+            t->term.var = var;
+        }
+
+        return t;
+    }
+
+    return NULL;
+}
+
+static Term* application() {
+    Term* left = atom();
+
+    if (left == NULL) {
+        return NULL;
+    }
+
+    while (true) {
+        Term* right = atom();
+
+        if (right == NULL) {
+            return left;
+        }
+
+        Term* p = allocTerm(termHeap);
+        p->type = TERM_APP;
+        p->term.app.first = left;
+        p->term.app.second = right;
+
+        left = p;
+    }
+}
+
+static Term* term() {
+    if (parser.current.type == TOKEN_LAMBDA) {
+        advance();
+
+        Term* t = allocTerm(termHeap);
+        t->type = TERM_LAMBDA;
+
+        // Match variable
+        if (!match(TOKEN_VAR, "Expected variable.")) {
+            return NULL;
+        }
+
+        // Create variable
+        Var var = { .id = varId++, .name = (char)parser.current.start[0] };
+        t->term.lambda.var = var;
+        advance();
+
+        // Match period
+        if (!match(TOKEN_PERIOD, "Expected period.")) {
+            return NULL;
+        }
+        advance();
+
+        // Add variable to variable list
+        pushVarList(varList, var);
+
+        // Get body
+        Term* body = term();
+
+        popVarList(varList);
+
+        if (body == NULL) {
+            return NULL;
+        }
+
+        t->term.lambda.body = body;
+
+        return t;
+    } else {
+        return application();
     }
 }
 
@@ -191,7 +299,7 @@ Term* interpret(const char* source) {
     advance();
     // To update current
     advance();
-    Term* t = expression();
+    Term* t = term();
     consume(TOKEN_EOF, "Expect end of expression.");
 
     // Should not be any variables still on the stack...
