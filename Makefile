@@ -6,18 +6,15 @@ SRC=$(wildcard src/*.c)
 OBJ=$(patsubst %.c, %.o, $(SRC))
 BUILD=build/
 
-all: main
+all: lambda
 
 %.o: %.c
 	$(CC) -I$(INCLUDE) $(CFLAGS) -o $@ -c $<
 
-main:
-
-
-main: $(OBJ)
+lambda: $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^
 
 .PHONY: clean
 
 clean:
-	@rm main *.o
+	@rm lambda

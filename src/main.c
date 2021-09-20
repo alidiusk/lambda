@@ -45,6 +45,14 @@ char* readFile(const char* path) {
 void repl() {
     char line[1024];
 
+    printf("Instructions:\n");
+    printf("There are three kinds of expressions in the lambda calculus.\n");
+    printf("1. Lambdas. Ex: (λx.x)\n");
+    printf("2. Variables. Ex: x\n");
+    printf("3. Applications. Ex: (λx.x)(λy.y)\n");
+    printf("The lambda character is required; it is recommended that you copy and paste it from this text.\n");
+    printf("Ctrl-D to quit.\n");
+
     for (;;) {
         printf("> ");
 

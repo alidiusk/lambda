@@ -1,5 +1,19 @@
 # Lambda
-Lambda calculus interpreter written in `C`.
+Lambda calculus interpreter written in `C`. Can be used as a REPL or to evaluate lambda expressions found in files.
+
+Uses a recursive descent parser to parse the lambda expression, then performs normal order reduction.
+
+## Usage
+```bash
+# Evaluate a lambda expression in a file.
+$ ./lambda [path]
+# Enter the REPL
+$ ./lambda
+```
+
+## Building
+No libraries are required, but the project has only been compiled on Linux.
+Simply use `make` to build the project. It will create a binary called `lambda`.
 
 ## Resources
 Many resources were used in the creation of this interpreter, including:
